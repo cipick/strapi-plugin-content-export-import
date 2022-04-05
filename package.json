@@ -13,7 +13,10 @@
     "test": "jest"
   },
   "dependencies": {
+    "axios": "^0.26.1",
     "file-saver": "^2.0.5",
+    "lodash": "^4.17.21",
+    "mime-types": "^2.1.35",
     "pluralize": "^8.0.0"
   },
   "author": {

@@ -1,3 +1,11 @@
+const _ = require('lodash');
+const axios = require('axios').default;
+const fs = require('fs');
+const stream = require('stream');
+const path = require('path');
+const promisify = require('util').promisify;
+const mime = require('mime-types');
+
 const importItemByContentType = (uid, data) => {
   return strapi.services[uid].create({
     data,
@@ -49,9 +57,60 @@ const deleteByIds = (uid, ids) => {
   });
 };
 
+const getFileDetails = (filePath) => {
+  return new Promise((resolve, reject) => {
+    fs.stat(filePath, (err, stats) => {
+      if (err) reject(err.message);
+      resolve(stats);
+    });
+  });
+}
+
+const deleteFile = (filePath) => {
+  return new Promise((resolve, reject) => {
+    fs.unlink(filePath, (err) => {
+      if (err) reject(err.message);
+      resolve('deleted');
+    });
+  });
+}
+
+const uploadToLibrary = async (imageByteStreamURL) => {
+  const filePath = './tmp/myImage.jpeg';
+  const { data } = await axios.get(imageByteStreamURL, {
+    responseType: 'stream',
+  });
+
+  const file = fs.createWriteStream(filePath);
+  const finished = promisify(stream.finished);
+  data.pipe(file);
+  await finished(file);
+  const image = await upload(filePath, 'uploads');
+  return image;
+}
+
+const upload = async (filePath, saveAs) => {
+  const stats = await getFileDetails(filePath);
+  const fileName = path.parse(filePath).base;
+
+  const res = await strapi.plugins.upload.services.upload.upload({
+    data: { path: saveAs },
+    files: {
+      path: filePath,
+      name: fileName,
+      type: mime.lookup(filePath),
+      size: stats.size,
+    },
+  });
+
+  await deleteFile(filePath);
+  return _.first(res);
+}
+
 module.exports = {
   importItemByContentType,
   findAll,
   deleteByIds,
   importSingleType,
+  uploadToLibrary
 };
