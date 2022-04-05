@@ -1,20 +1,20 @@
 const importItemByContentType = (uid, data) => {
-  return strapi.db.query(uid).create({
+  return strapi.services[uid].create({
     data,
   });
 };
 
 const importSingleType = async (uid, { data }) => {
-  const existing = await strapi.db.query(uid).findOne({});
+  const existing = await strapi.services[uid].findOne({});
   if (existing) {
-    return strapi.db.query(uid).update({
+    return strapi.services[uid].update({
       where: {
         id: existing.id,
       },
       data,
     })
   } else {
-    return strapi.db.query(uid).create({
+    return strapi.services[uid].create({
       data,
     });
   }
@@ -40,7 +40,7 @@ const findAll = async (uid) => {
 };
 
 const deleteByIds = (uid, ids) => {
-  return strapi.db.query(uid).deleteMany({
+  return strapi.services[uid].deleteMany({
     where: {
       id: {
         $in: ids,
