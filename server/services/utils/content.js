@@ -75,18 +75,33 @@ const deleteFile = (filePath) => {
   });
 }
 
-const uploadToLibrary = async (imageByteStreamURL) => {
-  const filePath = './tmp/myImage.jpeg';
+const uploadToLibrary = async (imageByteStreamURL, entitiy, model, field) => {
+  const parsed = new URL(imageByteStreamURL);
+  const filename = parsed.pathname.split('/').pop().toLowerCase();
+  const temporaryPath = '.tmp/' + filename;
   const { data } = await axios.get(imageByteStreamURL, {
     responseType: 'stream',
   });
-
-  const file = fs.createWriteStream(filePath);
+  const file = fs.createWriteStream(temporaryPath);
   const finished = promisify(stream.finished);
   data.pipe(file);
   await finished(file);
-  const image = await upload(filePath, 'uploads');
-  return image;
+  const stats = await getFileDetails(temporaryPath);
+
+  console.log('file', file);
+  const img = await strapi.plugins.upload.services.upload.uploadToEntity({
+    id: entitiy.id,
+    model,
+    field
+  }, {
+    path: temporaryPath,
+    name: filename.replace(/\.[a-zA-Z]*$/, ''),
+    type: mime.lookup(temporaryPath),
+    size: stats.size,
+    filename
+  });
+  console.log('img', img);
+  return img;
 }
 
 const upload = async (filePath, saveAs) => {

@@ -14,8 +14,15 @@ module.exports = {
     try {
       if (kind === 'collectionType' && source) {
         const items = source.data;
+
         for (let i = 0; i < items.length; i++) {
-          await utils.importItemByContentType(targetModel, items[i])
+          const item = items[i];
+          const files = Object.keys(item).filter((key)=> item[key].url).map((key) => ({ path: key, ...item[key]}))
+          const itemWithoutFiles = omit(item, files.map((file)=> file.path))
+          const entity = await utils.importItemByContentType(targetModel, itemWithoutFiles)
+          for(const file of files){
+            await utils.uploadToLibrary(file.url, entity, targetModel, file.path);
+          }
         }
       } else {
         await utils.importSingleType(targetModel, source);
