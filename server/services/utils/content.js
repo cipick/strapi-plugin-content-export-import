@@ -95,7 +95,7 @@ const uploadToLibrary = async (imageByteStreamURL, entitiy, model, field) => {
   }, {
     path: temporaryPath,
     name: filename.replace(/\.[a-zA-Z]*$/, ''),
-    type: headers['content-type'],
+    type: headers["content-type"].split(";").shift(),
     size: stats.size,
     filename
   });
