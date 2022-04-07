@@ -18,11 +18,10 @@ module.exports = {
 
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          const files = Object.keys(item).filter((key)=> item[key].url).map((key) => ({ path: key, ...item[key]}))
-          const itemWithoutFiles = omit(item, files.map((file)=> file.path))
-          const entity = await utils.importItemByContentType(targetModel, itemWithoutFiles)
+          const files = item.files;
+          const entity = await utils.importItemByContentType(targetModel, item.data)
           for(const file of files){
-            await utils.uploadToLibrary(file.url, entity, targetModel, file.path);
+            await utils.uploadToLibrary(file.url, entity, targetModel, file.field);
           }
         }
       } else {

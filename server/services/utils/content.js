@@ -7,8 +7,9 @@ const promisify = require('util').promisify;
 const mime = require('mime-types');
 
 const importItemByContentType = (uid, data) => {
-  return strapi.services[uid].create({
+  return strapi.entityService.create(uid, {
     data,
+    populate: '*'
   });
 };
 
@@ -75,7 +76,7 @@ const deleteFile = (filePath) => {
   });
 }
 
-const uploadToLibrary = async (imageByteStreamURL, entitiy, model, field) => {
+const uploadToLibrary = async (imageByteStreamURL, entity, model, field) => {
   const parsed = new URL(imageByteStreamURL);
   const filename = parsed.pathname.split('/').pop().toLowerCase();
   const temporaryPath = '.tmp/' + filename;
@@ -88,19 +89,15 @@ const uploadToLibrary = async (imageByteStreamURL, entitiy, model, field) => {
   await finished(file);
   const stats = await getFileDetails(temporaryPath);
 
-  const img = await strapi.plugins.upload.services.upload.uploadToEntity({
-    id: entitiy.id,
-    model,
-    field
-  }, {
-    path: temporaryPath,
-    name: filename.replace(/\.[a-zA-Z]*$/, ''),
-    type: headers["content-type"].split(";").shift(),
-    size: stats.size,
-    filename
+  return await strapi.entityService.uploadFiles(uid, entity, {
+    [field]: {
+      path: temporaryPath,
+      name: filename.replace(/\.[a-zA-Z]*$/, ''),
+      type: headers['content-type'].split(';').shift(),
+      size: stats.size,
+      filename
+    }
   });
-
-  return img;
 }
 
 const upload = async (filePath, saveAs) => {
