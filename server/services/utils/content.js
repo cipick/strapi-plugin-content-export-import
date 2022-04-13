@@ -89,7 +89,7 @@ const uploadToLibrary = async (imageByteStreamURL, entity, model, field) => {
   await finished(file);
   const stats = await getFileDetails(temporaryPath);
 
-  return await strapi.entityService.uploadFiles(uid, entity, {
+  return await strapi.entityService.uploadFiles(model, entity, {
     [field]: {
       path: temporaryPath,
       name: filename.replace(/\.[a-zA-Z]*$/, ''),
