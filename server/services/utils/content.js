@@ -76,11 +76,11 @@ const deleteFile = (filePath) => {
   });
 }
 
-const uploadToLibrary = async (imageByteStreamURL, entity, model, field) => {
-  const parsed = new URL(imageByteStreamURL);
+const fetchAndSaveTempFiles = async (url)=> {
+  const parsed = new URL(url);
   const filename = parsed.pathname.split('/').pop().toLowerCase();
   const temporaryPath = '.tmp/' + filename;
-  const { data, headers } = await axios.get(imageByteStreamURL, {
+  const { data, headers } = await axios.get(url, {
     responseType: 'stream',
   });
   const file = fs.createWriteStream(temporaryPath);
@@ -88,18 +88,22 @@ const uploadToLibrary = async (imageByteStreamURL, entity, model, field) => {
   data.pipe(file);
   await finished(file);
   const stats = await getFileDetails(temporaryPath);
+  return {
+    path: temporaryPath,
+    name: filename.replace(/\.[a-zA-Z]*$/, ''),
+    type: headers['content-type'].split(';').shift(),
+    size: stats.size,
+    filename
+  }
+}
 
-  const img = await strapi.entityService.uploadFiles(model, entity, {
-    [field]: {
-      path: temporaryPath,
-      name: filename.replace(/\.[a-zA-Z]*$/, ''),
-      type: headers['content-type'].split(';').shift(),
-      size: stats.size,
-      filename
-    }
+const uploadToLibrary = async (imageByteStreamURL, entity, model, field) => {
+  const fetchPromises = imageByteStreamURL.map(fetchAndSaveTempFiles)
+  const fileBuffers = await Promise.all(fetchPromises);
+
+  await strapi.entityService.uploadFiles(model, entity, {
+    [field]: fileBuffers
   });
-  console.log('img', img);
-  return img;
 }
 
 const upload = async (filePath, saveAs) => {
