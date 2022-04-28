@@ -8,7 +8,7 @@ const mime = require('mime-types');
 
 const importItemByContentType = (uid, data) => {
   return strapi.entityService.create(uid, {
-    data,
+    data: { ...data, publishedAt: Date.now() },
     populate: '*'
   });
 };
